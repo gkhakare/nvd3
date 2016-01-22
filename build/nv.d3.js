@@ -9840,6 +9840,7 @@ nv.models.parallelCoordinates = function() {
         , dimensionData = []
         , enabledDimensions = []
         , dimensionNames = []
+        , dimensionFormats = []
         , displayBrush = true
         , color = nv.utils.defaultColor()
         , filters = []

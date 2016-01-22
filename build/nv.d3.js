@@ -9910,6 +9910,7 @@ nv.models.parallelCoordinates = function() {
             		y[d] = d3.scale.ordinal()
             			.domain(domain)
             			.rangePoints([(availableHeight - 12) * 0.9, 0]);
+            		 y[d].brush = d3.svg.brush().y(y[d]).on('brushstart', brushstart).on('brush', brush).on('brushend', brushend);
             		return;
             	}
                 var extent = d3.extent(dataValues, function (p) { return +p[d]; });
@@ -10195,7 +10196,12 @@ nv.models.parallelCoordinates = function() {
                 active = []; //erase current active list
                 foreground.style('display', function(d) {
                     var isActive = actives.every(function(p, i) {
-                        if ((isNaN(d.values[p]) || isNaN(parseFloat(d.values[p]))) && extents[i][0] == y[p].brush.y().domain()[0]) return true;
+                    	if(isNaN(d.values[p]) && y[p].domain().indexOf(d.values[p]) != -1){
+                    		var domainIndex = y[p].domain().indexOf(d.values[p]);
+                    		var range = y[p].range()[domainIndex];
+                    		return (extents[i][0] <= range && range <= extents[i][1]);
+                    	}
+                    	else if ((isNaN(d.values[p]) || isNaN(parseFloat(d.values[p]))) && extents[i][0] == y[p].brush.y().domain()[0]) return true;
                         return (extents[i][0] <= d.values[p] && d.values[p] <= extents[i][1]) && !isNaN(parseFloat(d.values[p]));
                     });
                     if (isActive) active.push(d);

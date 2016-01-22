@@ -15,6 +15,7 @@ nv.models.parallelCoordinates = function() {
         , dimensionData = []
         , enabledDimensions = []
         , dimensionNames = []
+    	, dimensionFormats = []
         , displayBrush = true
         , color = nv.utils.defaultColor()
         , filters = []
@@ -65,6 +66,7 @@ nv.models.parallelCoordinates = function() {
             }; //set all active before first brush call
             
             dimensionNames = dimensionData.sort(function (a, b) { return a.currentPosition - b.currentPosition; }).map(function (d) { return d.key });
+            dimensionFormats = dimensionData.sort(function (a, b) { return a.currentPosition - b.currentPosition; }).map(function (d) { return d.format });
             enabledDimensions = dimensionData.filter(function (d) { return !d.disabled; });
             
 
@@ -76,7 +78,15 @@ nv.models.parallelCoordinates = function() {
             var oldDomainMaxValue = {};
             var displayMissingValuesline = false;
 
-            dimensionNames.forEach(function(d) {
+            dimensionNames.forEach(function(d, dimenstionNameIndex) {
+            	var format = dimensionFormats[dimenstionNameIndex];
+            	if(format && format == "s"){
+            		var domain =  dataValues.map(function (datavalue) {return datavalue[d]});
+            		y[d] = d3.scale.ordinal()
+            			.domain(domain)
+            			.rangePoints([(availableHeight - 12) * 0.9, 0]);
+            		return;
+            	}
                 var extent = d3.extent(dataValues, function (p) { return +p[d]; });
                 var min = extent[0];
                 var max = extent[1];
@@ -234,7 +244,13 @@ nv.models.parallelCoordinates = function() {
             dimensions.select('.nv-label').text(function (d) { return d.key });
             dimensions.select('.nv-axis')
                 .each(function (d, i) {
-                    d3.select(this).call(axis.scale(y[d.key]).tickFormat(d3.format(d.format)));
+                	if(d.format && d.format == "s"){
+                		d3.select(this).call(axis.scale(y[d.key]));
+                	}
+                	else{
+                		d3.select(this).call(axis.scale(y[d.key]).tickFormat(d3.format(d.format)));
+                	}
+                    
                 });
 
             // Add and store a brush for each axis.
@@ -266,6 +282,12 @@ nv.models.parallelCoordinates = function() {
             // Returns the path for a given data point.
             function path(d) {
                 return line(enabledDimensions.map(function (p) {
+                	if(p.format && p.format == "s"){
+                		var domain = y[p.key].domain();
+                		var range = y[p.key].range();
+                		var domainIndex = domain.indexOf(d.values[p.key]);
+                		return [x(p.key), range[domainIndex]];
+                	}
                     //If value if missing, put the value on the missing value line
                     if (isNaN(d.values[p.key]) || isNaN(parseFloat(d.values[p.key])) || displayMissingValuesline) {
                         var domain = y[p.key].domain();
